@@ -382,7 +382,11 @@ skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.m
 	{"error": "missing_authorization", "error_description": "Missing \"Authorization\" in headers."}
 	```
 
+**NOTE** since the protection is ServiceMesh based, the mockbin tool cannot return a traceid for that
+
+* Alternatively, remove the ServiceEntry for the SSO endpoint and see the trace showing the SSL error accordingly
 ![trace](traces/distributed-tracing-006.png)
+
 
 * Verify that providing a Bearer Token grants access to the endpoint
 	```
