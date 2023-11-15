@@ -233,7 +233,7 @@ vi mockbin/base/deployment.yml
 	"X-Envoy-Attempt-Count":"1",
 	...
 	```
-![trace](distributed-tracing-003.png)
+![trace](traces/distributed-tracing-003.png)
 
 **NOTE** the `ca.crt` file is the same for both deployments 
 
@@ -251,7 +251,7 @@ vi mockbin/base/deployment.yml
 	"X-Envoy-Attempt-Count":"1",
 	...
 	```
-![trace](distributed-tracing-004.png)
+![trace](traces/distributed-tracing-004.png)
 
 ## Expose each Application through RHSI 
 Even though we can utilize the `annotations` to expose Services, the Lab uses one RHSI Site to access multiple Services within one Cluster and we expose those manually.
@@ -296,7 +296,7 @@ In a scenario where the RHSI namespace cannot join the ServiceMesh you can still
 	{"written_at": "2023-11-14T18:17:49.849Z", "written_ts": 1699985869849441000, "msg": "127.0.0.6 - - [14/Nov/2023:18:17:49 +0000] \"GET / HTTP/1.1\" 200 3849 \"-\" \"mockbin-v1.0.0\"", "type": "log", "logger": "gunicorn.access", "thread": "MainThread", "level": "INFO", "module": "glogging", "line_no": 363, "correlation_id": "1e75e94a-831a-11ee-9459-6e64fcb2ea5a"}
 	```
 
-![trace](distributed-tracing-005.png)
+![trace](traces/distributed-tracing-005.png)
 
 Step 3 of the mockbin directory show-cases some distributed tracing outputs utilizing the `/tracefwd` endpoint of the mockbin application as well as using another deployment in the `production` namespace. Feel free to experiment with the deployments accordingly.
 
@@ -382,7 +382,7 @@ skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.m
 	{"error": "missing_authorization", "error_description": "Missing \"Authorization\" in headers."}
 	```
 
-![trace](distributed-tracing-006.png)
+![trace](traces/distributed-tracing-006.png)
 
 * Verify that providing a Bearer Token grants access to the endpoint
 	```
@@ -399,7 +399,7 @@ skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.m
 	..,
 	{"status":"OK","traceid":"2090904aad5fc52de1d18ef8fc439b19"}
 	```
-![trace](distributed-tracing-002.png)
+![trace](traces/distributed-tracing-002.png)
 
 * Authorization can even passed through multiple Clusters using RHSI
 	```
@@ -409,7 +409,7 @@ skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.m
 	   
 	{"status":"OK","traceid":"d1d1ff2f9e213008705b24da97fae581"}
 	```
-![trace](distributed-tracing-001.png)
+![trace](traces/distributed-tracing-001.png)
 
 * Trace verification through API
 	```
@@ -425,10 +425,10 @@ skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.m
 	```
 
 
-![trace](distributed-tracing-005.png)
+![trace](traces/distributed-tracing-005.png)
 
 * having some fun with loops
-![trace](distributed-tracing-007.png)
+![trace](traces/distributed-tracing-007.png)
 
 ## kind Cluster setup
 kind k8s is a small Kubernetes cluster that requires the kind cli binary and for the Lab purpose utilizes a yaml file for the Cluster definition.
