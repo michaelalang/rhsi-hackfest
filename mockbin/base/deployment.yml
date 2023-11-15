@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mockbin
+    version: v1
+    app.kubernetes.io/component: mockbin
+    app.kubernetes.io/instance: mockbin
+  name: mockbin
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      deployment: mockbin
+      app: mockbin
+      version: v1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
+      creationTimestamp: null
+      labels:
+        deployment: mockbin
+        app: mockbin
+        version: v1
+    spec:
+      containers:
+      - image: quay.io/rhn_support_milang/mockbin:latest
+        imagePullPolicy: Always
+        name: mockbin
+        env:
+        - name: JAEGER_ALL_IN_ONE_INMEMORY_COLLECTOR_PORT_14268_TCP_ADDR
+          value: jaeger-collector.skupper.svc.cluster.local
+        - name: JAEGER_ALL_IN_ONE_INMEMORY_COLLECTOR_PORT_14268_TCP_PORT
+          value: "14268"
+        - name: WEB_CONCURRENCY
+          value: "5"
+        - name: CONFIG
+          value: /var/run/oidc/client.json
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - name: oidc-secret
+          mountPath: /var/run/oidc/client.json
+          subPath: client.json
+          readOnly: true
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      volumes:
+      - name: oidc-secret
+        secret:
+          secretName: mockbin-oidc
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mockbin
+    app.kubernetes.io/component: mockbin
+    app.kubernetes.io/instance: mockbin
+    version: v1
+  name: mockbin
+spec:
+  ports:
+  - name: http-8080
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    deployment: mockbin
+    app: mockbin
+    version: v1
+  sessionAffinity: None
+  type: ClusterIP

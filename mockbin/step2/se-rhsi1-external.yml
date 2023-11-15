@@ -1,0 +1,14 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: se-rhsi1-external
+spec:
+  hosts:
+  - rhsi1.example.com
+  ports:
+  - name: https
+    number: 443
+    protocol: HTTPS
+    targetPort: 443
+  resolution: DNS

@@ -1,0 +1,44 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: mockbin-sso
+spec:
+  jwtRules:
+  - forwardOriginalToken: true
+    issuer: https://sso.example.com/realms/Example
+    jwksUri: https://sso.example.com/realms/Example/protocol/openid-connect/certs
+  selector:
+    matchLabels:
+      app: mockbin
+      version: v1
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: mockbin-sso
+spec:
+  rules:
+  - to:
+    - operation:
+        notPaths:
+        - /api/v1
+        - /api/v2
+  - to:
+    - operation:
+        paths:
+        - /api/v1/sso
+        - /api/v2/sso
+    when:
+    - key: request.auth.claims[iss]
+      values:
+      - https://sso.example.com/realms/Example
+    - key: request.auth.claims[groups]
+      values:
+      - rhsi-group
+    - key: request.auth.claims[email]
+      values:
+      - milang@redhat.com
+  selector:
+    matchLabels:
+      app: mockbin
+      version: v1

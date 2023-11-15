@@ -1,0 +1,48 @@
+apiVersion: v1
+items:
+- apiVersion: networking.istio.io/v1beta1
+  kind: ServiceEntry
+  metadata:
+    name: rhsi1-skupper-edge
+    namespace: skupper
+  spec:
+    hosts:
+    - rhsi1.example.com
+    ports:
+    - name: https
+      number: 32604
+      protocol: HTTPS
+      targetPort: 32604
+    resolution: DNS
+- apiVersion: networking.istio.io/v1beta1
+  kind: ServiceEntry
+  metadata:
+    name: rhsi1-skupper-inter
+    namespace: skupper
+  spec:
+    hosts:
+    - rhsi1.example.com
+    ports:
+    - name: https
+      number: 32603
+      protocol: HTTPS
+      targetPort: 32603
+    resolution: DNS
+- apiVersion: networking.istio.io/v1beta1
+  kind: ServiceEntry
+  metadata:
+    name: rhsi1-skupper-router
+    namespace: skupper
+  spec:
+    hosts:
+    - rhsi1.example.com
+    ports:
+    - name: https
+      number: 32602
+      protocol: HTTPS
+      targetPort: 32602
+    resolution: DNS
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

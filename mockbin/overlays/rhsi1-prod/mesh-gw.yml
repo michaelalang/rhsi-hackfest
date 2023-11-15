@@ -1,0 +1,25 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: mockbin
+spec:
+  host: mockbin
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: mockbin
+spec:
+  gateways:
+  - istio-system/frontend-gateway
+  - mesh
+  hosts:
+  - production.example.com
+  http:
+  - route:
+    - destination:
+        host: mockbin
+        port:
+          number: 8080
+      weight: 100

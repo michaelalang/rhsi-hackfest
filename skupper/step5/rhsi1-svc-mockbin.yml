@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mockbin
+    app.kubernetes.io/component: mockbin
+    app.kubernetes.io/instance: mockbin
+    version: v1
+  name: mockbin
+  namespace: mockbin
+spec:
+  ports:
+  - name: http-8080
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: metrics-15020
+    port: 15020
+    protocol: TCP
+    targetPort: 15020
+  selector:
+    app: mockbin
+    deployment: mockbin
+    version: v1
+  sessionAffinity: None
+  type: ClusterIP

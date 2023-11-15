@@ -1,0 +1,14 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: se-rhsi1
+spec:
+  hosts:
+  - rhsi1-mockbin.skupper.svc.cluster.local
+  ports:
+  - name: http
+    number: 8080
+    protocol: HTTP
+    targetPort: 8080
+  resolution: DNS

@@ -1,0 +1,41 @@
+apiVersion: v1
+data:
+  mesh: |-
+    defaultConfig:
+      discoveryAddress: istiod.istio-system.svc:15012
+      proxyMetadata: {}
+      tracing:
+        zipkin:
+          address: jaeger-collector-zipkin.skupper.svc:9411
+        sampling: 100
+      tracingServiceName: APP_LABEL_AND_NAMESPACE
+    enableTracing: true
+    tlsDefaults:
+      minProtocolVersion: TLSV1_3
+    meshMTLS:
+      minProtocolVersion: TLSV1_3
+    outboundTrafficPolicy:
+      mode: REGISTRY_ONLY
+    defaultProviders:
+      metrics:
+      - prometheus
+    enablePrometheusMerge: true
+    rootNamespace: istio-system
+    trustDomain: cluster.local
+    global:
+      meshID: "rhsi1"
+      proxy:
+        excludedIPRanges:
+        - 172.31.0.1/32
+        - 172.30.0.1/32
+        - 127.0.0.0/8
+  meshNetworks: 'networks: {}'
+kind: ConfigMap
+metadata:
+  labels:
+    install.operator.istio.io/owning-resource: unknown
+    istio.io/rev: default
+    operator.istio.io/component: Pilot
+    release: istio
+  name: istio
+  namespace: istio-system

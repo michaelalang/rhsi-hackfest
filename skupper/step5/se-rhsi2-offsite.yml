@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: rhsi1-mockbin-metrics-skupper
+  namespace: mockbin
+spec:
+  hosts:
+  - mock-stage.skupper.svc.cluster.local
+  - geoapi.skupper.svc.cluster.local
+  ports:
+  - name: https
+    number: 8080
+    protocol: HTTPS
+    targetPort: 8080
+  resolution: DNS

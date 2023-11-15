@@ -1,0 +1,45 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: mockbin
+spec:
+  host: mockbin
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: mockbin
+spec:
+  gateways:
+  - istio-system/frontend-gateway
+  hosts:
+  - rhsi2.example.com
+  http:
+  - route:
+    - destination:
+        host: mockbin
+        port:
+          number: 8080
+      weight: 100
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - rhsi2.example.com
+    route:
+    - destination:
+        host: mockbin
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: se-jaeger-collector
+spec:
+  hosts:
+  - jaeger-collector.skupper.svc.cluster.local
+  ports:
+  - name: http
+    number: 14268
+    protocol: HTTP
+    targetPort: 14268
+  resolution: DNS

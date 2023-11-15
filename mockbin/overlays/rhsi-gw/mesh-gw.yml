@@ -1,0 +1,34 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: mockbin
+spec:
+  host: mockbin
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: mockbin
+spec:
+  gateways:
+  - istio-system/frontend-gateway
+  hosts:
+  - rhsi1-gw.example.com
+  - rhsi-mockbin.skupper.svc.cluster.local
+  http:
+  - route:
+    - destination:
+        host: mockbin
+        port:
+          number: 8080
+      weight: 100
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - rhsi-gw.example.com
+      - rhsi-mockbin.skupper.svc.cluster.local
+    route:
+    - destination:
+        host: mockbin
