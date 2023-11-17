@@ -176,16 +176,16 @@ Links require to create tokens. For the purpose of the Lab, those tokens are set
 	```
 	skupper -c rhsi1 -n skupper service create jaeger-collector 4317 4318 9411 14267 14268 14250
 	skupper -c rhsi1 -n skupper service bind jaeger-collector service tempo.openshift-distributed-tracing.svc.cluster.local
-	skupper -c rhsi1 -n skupper service create rhsi1-mockbin 8080 15020
+	skupper -c rhsi1 -n skupper service create rhsi1-mockbin 8080
 	skupper -c rhsi1 -n skupper service bind rhsi1-mockbin service mockbin.mockbin.svc.cluster.local
-	skupper -c rhsi2 -n skupper service create rhsi2-mockbin 8080 15020
+	skupper -c rhsi2 -n skupper service create rhsi2-mockbin 8080
         skupper -c rhsi2 -n skupper service bind rhsi2-mockbin service mockbin.mockbin.svc.cluster.local
 	skupper -c rhsi1 -n skupper service create rhsi-ha 8080
 	skupper -c rhsi1 -n skupper service bind rhsi-ha service mockbin.mockbin.svc.cluster.local
 	skupper -c rhsi2 -n skupper service bind rhsi-ha service mockbin.mockbin.svc.cluster.local
 	```
 
-**NOTE** [Setup](DistributedTracing.md) of a Distributed Tracing system 
+**NOTE** [Setup](DistributedTracing.md) a Distributed Tracing system 
 
 ## Backup of RHSI sites
 RHSI provides an easy way to backup and restore Sites by dumping the `configmaps` and `secrets` containing configuration and certificates. 
@@ -198,9 +198,12 @@ The same process can be utilized if you for example want to enable the UI and di
 	```
 	mkdir skupper/step3/backup/{rhsi1,rhsi2}/{configmap,secret} -p
 	for e in $(oc --context rhsi1 -n skupper get cm,secret -o name  | grep -v istio | grep -v kube) ; do oc --context rhsi1 -n skupper get ${e} -o yaml | \
-		yq -r 'del(.metadata.ownerReferences)' > skupper/step3/backup/rhsi1/${e}.yml ; done
+		yq -r 'del(.metadata.ownerReferences) | del(.metadata.resourceVersion) | del(.metadata.uid) | del(.metadata.annotations."skupper.io/generated-by")' > skupper/step3/backup/rhsi1/${e}.yml ; done
 	for e in $(oc --context rhsi2 -n skupper get cm,secret -o name  | grep -v istio | grep -v kube) ; do oc --context rhsi2 -n skupper get ${e} -o yaml | \
-		yq -r 'del(.metadata.ownerReferences)' > skupper/step3/backup/rhsi2/${e}.yml ; done
+		yq -r 'del(.metadata.ownerReferences) | del(.metadata.resourceVersion) | del(.metadata.uid) | del(.metadata.annotations."skupper.io/generated-by")' > skupper/step3/backup/rhsi2/${e}.yml ; done
+	mv skupper/step3/backup/rhsi1/configmap/skupper-site.yml skupper/step3/backup/rhsi1/skupper-site.yml
+	mv skupper/step3/backup/rhsi2/configmap/skupper-site.yml skupper/step3/backup/rhsi2/skupper-site.yml
+
 	```
 * Remove the `metadata.ownerReference` from the CR's if `yq` is not installed
 * Delete existing Sites 
@@ -210,9 +213,12 @@ The same process can be utilized if you for example want to enable the UI and di
 	```
 * Recreate the Sites 
 	```
-	oc --context rhsi1 -n skupper apply -f skupper/backup/rhsi1/configmap -f skupper/backup/rhsi1/secret
-	oc --context rhsi2 -n skupper apply -f skupper/backup/rhsi2/configmap -f skupper/backup/rhsi2/secret
+	oc --context rhsi1 -n skupper apply -f skupper/step3/backup/rhsi1/configmap -f skupper/step3/backup/rhsi1/secret
+	oc --context rhsi1 -n skupper apply -f skupper/step3/backup/rhsi1/skupper-site.yml
+	oc --context rhsi2 -n skupper apply -f skupper/step3/backup/rhsi2/configmap -f skupper/step3/backup/rhsi2/secret
+	oc --context rhsi2 -n skupper apply -f skupper/step3/backup/rhsi2/skupper-site.yml
 	```
+	**NOTE** the Lab adjusts securityContext and port, ensure to re-apply the [steps](README.md#adjustments-to-the-Operator-based-deployments-and-service-mappings-to-NodePorts)
 * Verify the deployment
 	``` 
 	oc --context rhsi1 -n skupper get pods

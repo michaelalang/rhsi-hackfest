@@ -9,21 +9,11 @@ spec:
   - rhsi1.example.com
   - rhsi1-mockbin.skupper.cluster.local
   http:
-  - match:
-    - port: 8080
-    route:
+  - route:
     - destination:
         host: mockbin
         port:
           number: 8080
-      weight: 100
-  - match:
-    - port: 15020
-    route:
-    - destination:
-        host: mockbin
-        port:
-          number: 15020
       weight: 100
   tls:
   - match:
@@ -33,3 +23,6 @@ spec:
     route:
     - destination:
         host: mockbin
+        port:
+          number: 8080
+      weight: 100

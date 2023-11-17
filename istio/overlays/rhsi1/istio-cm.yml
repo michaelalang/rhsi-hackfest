@@ -23,9 +23,10 @@ data:
     rootNamespace: istio-system
     trustDomain: cluster.local
     global:
-      meshID: "rhsi1"
+      meshId: "rhsi1"
       proxy:
         excludedIPRanges:
+        - 10.32.0.1/32
         - 127.0.0.0/8
   meshNetworks: 'networks: {}'
 kind: ConfigMap
