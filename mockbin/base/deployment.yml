@@ -24,12 +24,12 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
         prometheus.io/port: "8080"
       creationTimestamp: null
       labels:
+        sidecar.istio.io/inject: "true"
         deployment: mockbin
         app: mockbin
         version: v1

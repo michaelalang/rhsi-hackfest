@@ -11,18 +11,7 @@ spec:
     number: 8080
     protocol: HTTP
     targetPort: 8080
-  resolution: DNS
----
-apiVersion: networking.istio.io/v1beta1
-kind: ServiceEntry
-metadata:
-  name: rhsi2-mockbin-metrics-skupper
-  namespace: mockbin
-spec:
-  hosts:
-  - rhsi2-mockbin-metrics.skupper.svc.cluster.local
-  ports:
-  - name: http
+  - name: http-metrics
     number: 15020
     protocol: HTTP
     targetPort: 15020

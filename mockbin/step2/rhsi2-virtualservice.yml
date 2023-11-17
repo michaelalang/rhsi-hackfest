@@ -7,20 +7,29 @@ spec:
   - istio-system/frontend-gateway
   hosts:
   - rhsi2.example.com
-  - rhsi2-mockbin.istio-system.svc.cluster.local
+  - rhsi2-mockbin.skupper.svc.cluster.local
   http:
-  - route:
+  - match:
+    - port: 8080
+    route:
     - destination:
         host: mockbin
         port:
           number: 8080
+      weight: 100
+  - match:
+    - port: 15020
+    route:
+    - destination:
+        host: mockbin
+        port:
+          number: 15020
       weight: 100
   tls:
   - match:
     - port: 443
       sniHosts:
       - rhsi2.example.com
-      - rhsi2-mockbin.istio-system.svc.cluster.local
     route:
     - destination:
         host: mockbin
