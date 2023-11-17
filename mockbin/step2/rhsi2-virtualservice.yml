@@ -5,6 +5,7 @@ metadata:
 spec:
   gateways:
   - istio-system/frontend-gateway
+  - mesh
   hosts:
   - rhsi2.example.com
   - rhsi2-mockbin.skupper.svc.cluster.local

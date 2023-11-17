@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1beta1
 kind: ServiceEntry
 metadata:
-  name: rhsi2-mockbin-skupper
+  name: se-rhsi1
   namespace: mockbin
 spec:
   hosts:
