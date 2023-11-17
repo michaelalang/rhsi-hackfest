@@ -314,18 +314,18 @@ skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.m
 ```
 * Create the necessary ServiceEntries in ServiceMesh
 	```
-	oc --context rhsi1 -n mockbin apply -f mockbin/step5/se-rhsi2.yml
-	oc --context rhsi2 -n mockbin apply -f mockbin/step5/se-rhsi1.yml
+	oc --context rhsi1 -n mockbin apply -f skupper/step5/se-rhsi2.yml
+	oc --context rhsi2 -n mockbin apply -f skupper/step5/se-rhsi1.yml
 	```
 * Update the Service resource to the Envoy stats port
 	```
-	oc --context rhsi1 -n mockbin apply -f rhsi1-svc-mockbin.yml
-	oc --context rhsi2 -n mockbin apply -f rhsi2-svc-mockbin.yml
+	oc --context rhsi1 -n mockbin apply -f skupper/step5/rhsi1-svc-mockbin.yml
+	oc --context rhsi2 -n mockbin apply -f skupper/step5/rhsi2-svc-mockbin.yml
 	```
 * Create a DestinationRule to exclude the stats port from the ServiceMesh
 	```
-	oc --context rhsi1 -n mockbin apply -f rhsi1-dr-mockbin.yml
-	oc --context rhsi2 -n mockbin apply -f rhsi2-dr-mockbin.yml
+	oc --context rhsi1 -n mockbin apply -f skupper/step5/rhsi1-dr-mockbin.yml
+	oc --context rhsi2 -n mockbin apply -f skupper/step5/rhsi2-dr-mockbin.yml
 	```
 **NOTE** even though metrics are scraped `plain-text` with that setting, there's a conflict of the openshift-monitoring namespace not being in the ServiceMesh which makes that setting mandatory.
 
