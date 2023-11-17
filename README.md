@@ -180,9 +180,10 @@ Links require to create tokens. For the purpose of the Lab, those tokens are set
 	skupper -c rhsi1 -n skupper service bind rhsi1-mockbin service mockbin.mockbin.svc.cluster.local
 	skupper -c rhsi2 -n skupper service create rhsi2-mockbin 8080 15020
         skupper -c rhsi2 -n skupper service bind rhsi2-mockbin service mockbin.mockbin.svc.cluster.local
-	skupper -c rhsi1 -n skupper service create rhsi-ha 8080
-	skupper -c rhsi1 -n skupper service bind rhsi-ha service mockbin.mockbin.svc.cluster.local
-	skupper -c rhsi2 -n skupper service bind rhsi-ha service mockbin.mockbin.svc.cluster.local
+	skupper -c rhsi1 -n skupper service create rhsi1-metrics 8010
+	skupper -c rhsi1 -n skupper service bind rhsi1-metrics service skupper.skupper.svc.cluster.local
+	skupper -c rhsi2 -n skupper service create rhsi2-metrics 8010
+	skupper -c rhsi2 -n skupper service bind rhsi2-metrics service skupper.skupper.svc.cluster.local
 	```
 
 **NOTE** [Setup](DistributedTracing.md) a Distributed Tracing system 
