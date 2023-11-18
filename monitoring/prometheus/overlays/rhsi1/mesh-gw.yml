@@ -1,0 +1,26 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: prometheus
+spec:
+  host: prometheus
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: prometheus
+spec:
+  gateways:
+  - istio-system/frontend-gateway
+  - mesh
+  hosts:
+  - prometheus.skupper.svc.cluster.local
+  - prometheus-rhsi1.example.com
+  http:
+  - route:
+    - destination:
+        host: prometheus.openshift-distributed-tracing.svc.cluster.local
+        port:
+          number: 9090
+      weight: 100

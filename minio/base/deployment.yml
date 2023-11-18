@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: minio
+    app.kubernetes.io/component: minio
+    app.kubernetes.io/instance: minio
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/part-of: minio
+    app.openshift.io/runtime: joomla
+    app.openshift.io/runtime-namespace: minio
+  name: minio
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      app: minio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        sidecar.istio.io/inject: "True"
+        app: minio
+        deployment: minio
+        version: v1
+    spec:
+      containers:
+      - env:
+        - name: MINIO_UPDATE_MINISIGN_PUBKEY
+          value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav"
+        - name: MINIO_ACCESS_KEY_FILE
+          value: "access_key"
+        - name: MINIO_ROOT_USER_FILE
+          value: "access_key"
+        - name: HOSTNAME
+          value: "minio"
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: MINIO_ROOT_PASSWORD
+              name: minio-admin
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              key: MINIO_ROOT_USER
+              name: minio-admin
+        - name: MINIO_ROOT_PASSWORD_FILE
+          value: "secret_key"
+        - name: MINIO_SECRET_KEY_FILE
+          value: "secret_key"
+        - name: MINIO_CONFIG_ENV_FILE
+          value: "config.env"
+        - name: MINIO_KMS_SECRET_KEY_FILE
+          value: "kms_master_key"
+        - name: MINIO_PROMETHEUS_URL
+          value: http://prometheus:9090
+        - name: MINIO_PROMETHEUS_JOB_ID
+          value: minio
+        image: quay.io/minio/minio:latest
+        command: ["/usr/bin/docker-entrypoint.sh"]
+        args: ["server", "--console-address", ":9001", "/data"]
+        imagePullPolicy: Always
+        name: minio
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        - containerPort: 9001
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /data
+          name: minio
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: minio
+        persistentVolumeClaim:
+          claimName: minio
