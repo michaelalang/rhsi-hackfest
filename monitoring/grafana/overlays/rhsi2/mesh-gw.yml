@@ -1,0 +1,25 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: grafana
+spec:
+  host: grafana
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: grafana
+spec:
+  gateways:
+  - istio-system/frontend-gateway
+  - mesh
+  hosts:
+  - grafana-rhsi2.example.com
+  http:
+  - route:
+    - destination:
+        host: grafana.openshift-distributed-tracing.svc.cluster.local
+        port:
+          number: 3000
+      weight: 100

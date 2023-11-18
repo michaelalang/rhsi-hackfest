@@ -14,8 +14,8 @@ within the repository you will find a directory called `skupper`. It contains su
 
 * Deploy the RHSI operator:
     ```
-    oc --context rhsi1 apply -f base/skupper-operator.yml
-    oc --context rhsi2 apply -f base/skupper-operator.yml
+    oc --context rhsi1 apply -f skupper/base/skupper-operator.yml
+    oc --context rhsi2 apply -f skupper/base/skupper-operator.yml
     ```
 * Wait until the operator has finished deploying.
 * Verify that the deployment has been successful:
@@ -34,20 +34,20 @@ For the purpose of this lab the namespace is called `skupper`. If you do want to
 
 * Create the namespaces:
 	```
-	oc --context rhsi1 apply -f base/namespace.yml
-	oc --context rhsi2 apply -f base/namespace.yml
+	oc --context rhsi1 apply -f skupper/base/namespace.yml
+	oc --context rhsi2 apply -f skupper/base/namespace.yml
 	```
 The CR already has the required label for Openshift ServiceMesh in mode `cluster` to be picked up. If you still want to utilize `tenant` based OSSM, ensure to add the `ServiceMeshMember` or `ServiceMeshMemberRole` accordingly.
 
 * Deploy the RHSI `skupper-site` configmap:
 	```
-	oc --context rhsi1 -n skupper apply -f overlays/rhsi1/skupper-site.yml
-	oc --context rhsi2 -n skupper apply -f overlays/rhsi2/skupper-site.yml
+	oc --context rhsi1 -n skupper apply -f skupper/overlays/rhsi1/skupper-site.yml
+	oc --context rhsi2 -n skupper apply -f skupper/overlays/rhsi2/skupper-site.yml
 	```
 **NOTE** The site definition is based upon NodePort due to the lack of Routes in kind Kubernetes. The adjustments for an Openshift Cluster with ServiceMesh enabled and exposed through OSSM virtualservices is not covered in that Lab.
 
 #### adjustments to the Operator based deployments and service mappings to NodePorts
-Since the kind Kubernetes cluster is based upon Kubernetes 1.26 the `runAsNonRoot: true` needs to be adjusted to get the deployments up-and-running.
+Since the kind Kubernetes cluster is based upon Kubernetes 1.27.3 the `runAsNonRoot: true` needs to be adjusted to get the deployments up-and-running.
 
 * Update all deployments in the namespace:
 	```
@@ -55,9 +55,17 @@ Since the kind Kubernetes cluster is based upon Kubernetes 1.26 the `runAsNonRoo
 	  sed -e " s#runAsNonRoot: true#runAsNonRoot: false#; " | \
 	     oc --context rhsi1 -n skupper apply -f - 
 
+        oc --context rhsi1 -n skupper get deploy/skupper-service-controller -o yaml | \
+          sed -e " s#runAsNonRoot: true#runAsNonRoot: false#; " | \
+             oc --context rhsi1 -n skupper apply -f -
+
 	oc --context rhsi2 -n skupper get deploy/skupper-router -o yaml | \
 	  sed -e " s#runAsNonRoot: true#runAsNonRoot: false#; " | \
 	     oc --context rhsi2 -n skupper apply -f - 
+
+        oc --context rhsi2 -n skupper get deploy/skupper-service-controller -o yaml | \
+          sed -e " s#runAsNonRoot: true#runAsNonRoot: false#; " | \
+             oc --context rhsi2 -n skupper apply -f -
 	```
 
 * Adjust the `nodePorts` of skupper service :
@@ -114,30 +122,46 @@ Since the kind Kubernetes cluster is based upon Kubernetes 1.26 the `runAsNonRoo
     skupper-service-controller-76fb5cf855-xlfzk   3/3     Running   1 (9h ago)   9h
     ```
 ## Create RHSI tokens
+**NOTE** For this Lab, tokens are not necessary and can be skipped.
+
 Links require to create tokens. For the purpose of the Lab, those tokens are set to a long lifetime and multiple re-uses. 
 **NOTE** long lived tokens and multiple re-uses are settings not recommended for production tokens.
 
 * Create a token for each Site
     ```
-    skupper -c rhsi1 -n skupper token create --name rhsi1 --expiry 86400m0s --uses 1000 step2/rhsi1.token
-    skupper -c rhsi2 -n skupper token create --name rhsi2 --expiry 86400m0s --uses 1000 step2/rhsi2.token
+    mkdir skupper/step2
+    skupper -c rhsi1 -n skupper token create --name rhsi1 --expiry 86400m0s --uses 1000 skupper/step2/rhsi1.token
+    skupper -c rhsi2 -n skupper token create --name rhsi2 --expiry 86400m0s --uses 1000 skupper/step2/rhsi2.token
     ```
 ## Create links to the Sites
 **NOTE** RHSI Site links are bi-directional. It is not necessary to create links vice-versa.
 
 * Apply the necessary ServiceMesh configuration to grant access to the RHSI services
 	```
-	oc --context rhsi1 -n skupper apply -f step4/rhsi1/se-rhsi2.yml
-	oc --context rhsi2 -n skupper apply -f step4/rhsi2/se-rhsi1.yml
+	oc --context rhsi1 -n skupper apply -f skupper/step4/rhsi1/se-rhsi2.yml
+	oc --context rhsi2 -n skupper apply -f skupper/step4/rhsi2/se-rhsi1.yml
 	```
 
 * Create a link from Site1 to Site2
 	```
-	skupper -c rhsi1 -n skupper link create --name rhsi2 step2/rhsi2.token
+	skupper -c rhsi1 -n skupper link create --name rhsi2 skupper/step2/rhsi2.token
 	```
+	**NOTE** following declarative config is Work in Progress
+	```
+	export CERTS=$(oc --context rhsi2 -n skupper get secret skupper-claims-server -o yaml | yq .data)
+	yq -re ".data = env(CERTS)" < skupper/step2/rhsi2.yml | \
+		oc --context rhsi1 -n skupper apply -f -
+	```
+
 * Alternatively, create a link from Site2 to Site1
 	```
-	skupper -c rhsi2 -n skupper link create --name rhsi1 step2/rhsi1.token
+	skupper -c rhsi2 -n skupper link create --name rhsi1 skupper/step2/rhsi1.token
+	```
+	**NOTE** following declarative config is Work in Progress
+	```
+	export CERTS=$(oc --context rhsi1 -n skupper get secret skupper-claims-server -o yaml | yq .data)
+        yq -re ".data = env(CERTS)" < skupper/step2/rhsi1.yml | \
+                oc --context rhsi2 -n skupper apply -f -
 	```
 * Verify the link state
 	```
@@ -147,9 +171,22 @@ Links require to create tokens. For the purpose of the Lab, those tokens are set
 		 Link rhsi1 is connected
 	```
 
-For the Lab show-case purpose I have added an additional Link to consolidate Cluster spawning Trace collection. Alternatively you can expose the zipkin protocol port through default Openshift routes instead. 
+* Create the services skupper handles
 
-**NOTE** Setup of a Distributed Tracing system is not included in the Lab
+	```
+	skupper -c rhsi1 -n skupper service create jaeger-collector 4317 4318 9411 14267 14268 14250
+	skupper -c rhsi1 -n skupper service bind jaeger-collector service tempo.openshift-distributed-tracing.svc.cluster.local
+	skupper -c rhsi1 -n skupper service create rhsi1-mockbin 8080 15020
+	skupper -c rhsi1 -n skupper service bind rhsi1-mockbin service mockbin.mockbin.svc.cluster.local
+	skupper -c rhsi2 -n skupper service create rhsi2-mockbin 8080 15020
+        skupper -c rhsi2 -n skupper service bind rhsi2-mockbin service mockbin.mockbin.svc.cluster.local
+	skupper -c rhsi1 -n skupper service create rhsi1-metrics 8010
+	skupper -c rhsi1 -n skupper service bind rhsi1-metrics service skupper.skupper.svc.cluster.local
+	skupper -c rhsi2 -n skupper service create rhsi2-metrics 8010
+	skupper -c rhsi2 -n skupper service bind rhsi2-metrics service skupper.skupper.svc.cluster.local
+	```
+
+**NOTE** [Setup](DistributedTracing.md) a Distributed Tracing system 
 
 ## Backup of RHSI sites
 RHSI provides an easy way to backup and restore Sites by dumping the `configmaps` and `secrets` containing configuration and certificates. 
@@ -160,12 +197,14 @@ The same process can be utilized if you for example want to enable the UI and di
 * Create backup of the current deployment Site1
     **NOTE** the command below expect the tool [yq](https://kislyuk.github.io/yq/#installation) to be installed in the system
 	```
-	cd step3
-	mkdir backup/{rhsi1,rhsi2}/{configmap,secret} -p
+	mkdir skupper/step3/backup/{rhsi1,rhsi2}/{configmap,secret} -p
 	for e in $(oc --context rhsi1 -n skupper get cm,secret -o name  | grep -v istio | grep -v kube) ; do oc --context rhsi1 -n skupper get ${e} -o yaml | \
-		yq -r 'del(.metadata.ownerReferences)' > backup/rhsi1/${e}.yml ; done
+		yq -r 'del(.metadata.ownerReferences) | del(.metadata.resourceVersion) | del(.metadata.uid) | del(.metadata.annotations."skupper.io/generated-by")' > skupper/step3/backup/rhsi1/${e}.yml ; done
 	for e in $(oc --context rhsi2 -n skupper get cm,secret -o name  | grep -v istio | grep -v kube) ; do oc --context rhsi2 -n skupper get ${e} -o yaml | \
-		yq -r 'del(.metadata.ownerReferences)' > backup/rhsi2/${e}.yml ; done
+		yq -r 'del(.metadata.ownerReferences) | del(.metadata.resourceVersion) | del(.metadata.uid) | del(.metadata.annotations."skupper.io/generated-by")' > skupper/step3/backup/rhsi2/${e}.yml ; done
+	mv skupper/step3/backup/rhsi1/configmap/skupper-site.yml skupper/step3/backup/rhsi1/skupper-site.yml
+	mv skupper/step3/backup/rhsi2/configmap/skupper-site.yml skupper/step3/backup/rhsi2/skupper-site.yml
+
 	```
 * Remove the `metadata.ownerReference` from the CR's if `yq` is not installed
 * Delete existing Sites 
@@ -175,9 +214,12 @@ The same process can be utilized if you for example want to enable the UI and di
 	```
 * Recreate the Sites 
 	```
-	oc --context rhsi1 -n skupper apply -f backup/rhsi1/configmap -f backup/rhsi1/secret
-	oc --context rhsi2 -n skupper apply -f backup/rhsi2/configmap -f backup/rhsi2/secret
+	oc --context rhsi1 -n skupper apply -f skupper/step3/backup/rhsi1/configmap -f skupper/step3/backup/rhsi1/secret
+	oc --context rhsi1 -n skupper apply -f skupper/step3/backup/rhsi1/skupper-site.yml
+	oc --context rhsi2 -n skupper apply -f skupper/step3/backup/rhsi2/configmap -f skupper/step3/backup/rhsi2/secret
+	oc --context rhsi2 -n skupper apply -f skupper/step3/backup/rhsi2/skupper-site.yml
 	```
+	**NOTE** the Lab adjusts securityContext and port, ensure to re-apply the [steps](README.md#adjustments-to-the-Operator-based-deployments-and-service-mappings-to-NodePorts)
 * Verify the deployment
 	``` 
 	oc --context rhsi1 -n skupper get pods
@@ -202,6 +244,7 @@ The deployment will be done in the namespace `mockbin` for each Cluster and auto
 **NOTE** if you do not have a Distributed Tracing system remove the following Environment settings from the deployment
 ```
 vi mockbin/base/deployment.yml
+      ...
         env:
         - name: JAEGER_ALL_IN_ONE_INMEMORY_COLLECTOR_PORT_14268_TCP_ADDR # < remove
           value: jaeger-collector.skupper.svc.cluster.local              # < remove
@@ -255,36 +298,17 @@ vi mockbin/base/deployment.yml
 
 ## Expose each Application through RHSI 
 Even though we can utilize the `annotations` to expose Services, the Lab uses one RHSI Site to access multiple Services within one Cluster and we expose those manually.
+**NOTE** the services have been exposed already with a previous command that restored all services as they should be in the Lab.
 
-* Expose service `mockbin` in Cluster1
-	```
-	skupper -c rhsi1 -n skupper service create rhsi1-mockbin 8080
-	skupper -c rhsi1 -n skupper service bind rhsi1-mockbin service mockbin.mockbin.svc.cluster.local --target-port=8080
-	```
-**NOTE** since we have both namespace in ServiceMesh we can address the mockbin service directly
-In a scenario where the RHSI namespace cannot join the ServiceMesh you can still configured it pointing to the ingress gateway of the ServiceMesh instead of the application.
-
-* Alternatively, expose service `mockbin` through ServiceMesh ingress gateway 
-	```
-	skupper -c rhsi1 -n skupper service create rhsi1-mockbin 8080
-	skupper -c rhsi1 -n skupper service bind rhsi1-mockbin service istio-ingressgateway.istio-system.svc.cluster.local --target-port=443
-	```
-**NOTE** depending on the `--target-port` you might introduce a `plain-text` path from RHSI to the ingress when choosing port `80`. Using `--target-port=443` requires the traffic passing through RHSI to be `https`.
-
-* Expose service `mockbin` in Cluster2
-	```
-	skupper -c rhsi2 -n skupper service create rhsi2-mockbin 8080
-	skupper -c rhsi2 -n skupper service bind rhsi2-mockbin service mockbin.mockbin.svc.cluster.local --target-port=8080
-	```
 * Apply the necessary changes to ServiceMesh reflecting the `hostname` in the RHSI service
 	```
-	oc --context rhsi1 apply -f mockbin/step2/rhsi1-virtualservice.yml
-	oc --context rhsi2 apply -f mockbin/step2/rhsi2-virtualservice.yml
+	oc --context rhsi1 -n mockbin apply -f mockbin/step2/rhsi1-virtualservice.yml
+	oc --context rhsi2 -n mockbin apply -f mockbin/step2/rhsi2-virtualservice.yml
 	```
 * Apply the ServiceMesh ServiceEntry to grant access to the RHSI services
 	```
-	oc --context rhsi1 apply -f mockbin/step2/se-rhsi2.yml
-	oc --context rhsi1 apply -f mockbin/step2/se-rhsi1.yml
+	oc --context rhsi1 -n mockbin apply -f mockbin/step2/se-rhsi2.yml
+	oc --context rhsi2 -n mockbin apply -f mockbin/step2/se-rhsi1.yml
 	```
 * Verify that Application in Cluster1 can access Application in Cluster2 through RHSI
 	```
@@ -304,14 +328,6 @@ Step 3 of the mockbin directory show-cases some distributed tracing outputs util
 ### scraping metrics from the application and the ServiceMesh
 to be able to scrape merged metrics in Prometheus format we need to expose the Envoy stats port through RHSI
 
-* Expose the Envoy stats port
-```
-skupper -c rhsi1 -n skupper service create rhsi1-mockbin-metrics 15020
-skupper -c rhsi1 -n skupper service bind rhsi1-mockbin-metrics service mockbin.mockbin --target-port 15020
-
-skupper -c rhsi2 -n skupper service create rhsi2-mockbin-metrics 15020
-skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.mockbin --target-port 15020
-```
 * Create the necessary ServiceEntries in ServiceMesh
 	```
 	oc --context rhsi1 -n mockbin apply -f skupper/step5/se-rhsi2.yml
@@ -322,7 +338,7 @@ skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.m
 	oc --context rhsi1 -n mockbin apply -f skupper/step5/rhsi1-svc-mockbin.yml
 	oc --context rhsi2 -n mockbin apply -f skupper/step5/rhsi2-svc-mockbin.yml
 	```
-* Create a DestinationRule to exclude the stats port from the ServiceMesh
+* Create a DestinationRule to exclude the stats port from the ServiceMesh as this is the envoy endpoint not the application
 	```
 	oc --context rhsi1 -n mockbin apply -f skupper/step5/rhsi1-dr-mockbin.yml
 	oc --context rhsi2 -n mockbin apply -f skupper/step5/rhsi2-dr-mockbin.yml
@@ -331,7 +347,7 @@ skupper -c rhsi2 -n skupper service bind rhsi2-mockbin-metrics service mockbin.m
 
 * Verify that merged metrics are scrape able 
 	```
-	oc --context rhsi1 -n mockbin exec -ti deploy/mockbin -- curl http://rhsi2-mockbin-metrics.skupper.svc.cluster.local:15020/stats/prometheus
+	oc --context rhsi1 -n mockbin exec -ti deploy/mockbin -- curl http://rhsi2-mockbin.skupper.svc.cluster.local:15020/stats/prometheus
 
 	# HELP istio_agent_cert_expiry_seconds The time remaining, in seconds, before the certificate chain will expire. A negative value indicates the cert is expired.
 	# TYPE istio_agent_cert_expiry_seconds gauge
@@ -488,6 +504,9 @@ kind k8s is a small Kubernetes cluster that requires the kind cli binary and for
 	oc --context rhsi2 get nodes
 	oc --context rhsi1 get pods -A
 	```
+
+**NOTE** the following deployments require a `re-apply` depending on how fast the CRD's are available in the API.
+
 ###  Deploy the metallb 
 * Deploy the metallb resource
 	```

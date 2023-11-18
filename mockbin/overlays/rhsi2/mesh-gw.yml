@@ -29,6 +29,9 @@ spec:
     route:
     - destination:
         host: mockbin
+        port:
+          number: 8080
+      weight: 100
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: ServiceEntry

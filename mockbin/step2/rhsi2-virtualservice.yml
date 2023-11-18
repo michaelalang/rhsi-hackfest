@@ -5,9 +5,10 @@ metadata:
 spec:
   gateways:
   - istio-system/frontend-gateway
+  - mesh
   hosts:
   - rhsi2.example.com
-  - rhsi2-mockbin.istio-system.svc.cluster.local
+  - rhsi2-mockbin.skupper.svc.cluster.local
   http:
   - route:
     - destination:
@@ -20,7 +21,9 @@ spec:
     - port: 443
       sniHosts:
       - rhsi2.example.com
-      - rhsi2-mockbin.istio-system.svc.cluster.local
     route:
     - destination:
         host: mockbin
+        port:
+          number: 8080
+      weight: 100

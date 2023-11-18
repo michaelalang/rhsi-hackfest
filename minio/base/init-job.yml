@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-init
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "False"
+    spec:
+      containers:
+      - name: minio-config
+        imagePullPolicy: IfNotPresent
+        image: docker.io/minio/mc
+        env:
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: MINIO_ROOT_PASSWORD
+              name: minio-admin
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              key: MINIO_ROOT_USER
+              name: minio-admin
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        command:
+          - /bin/sh
+          - -c
+          - "/bin/mc -C /tmp alias set s3 http://minio.$(NAMESPACE):9000 $(MINIO_ROOT_USER) $(MINIO_ROOT_PASSWORD) --api 's3v4' --path 'auto' ; while /bin/true ; do /bin/mc -C /tmp mb s3/tempo || /bin/mc -C /tmp ls s3/tempo && break || sleep 1 ; done ; true"
+        volumeMounts:
+        - mountPath: /root/.mc/
+          name: mc-base
+      restartPolicy: Never
+      volumes:
+      - name: mc-base
+        emptyDir: {}
+  backoffLimit: 1

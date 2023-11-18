@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1beta1
 kind: ServiceEntry
 metadata:
-  name: rhsi1-mockbin-skupper
+  name: se-rhsi1
   namespace: mockbin
 spec:
   hosts:
@@ -12,20 +12,4 @@ spec:
     protocol: HTTP
     targetPort: 8080
   resolution: DNS
----
-apiVersion: networking.istio.io/v1beta1
-kind: ServiceEntry
-metadata:
-  name: rhsi1-mockbin-metrics-skupper
-  namespace: mockbin
-spec:
-  hosts:
-  - rhsi1-mockbin-metrics.skupper.svc.cluster.local
-  ports:
-  - name: http
-    number: 15020
-    protocol: HTTP
-    targetPort: 15020
-  resolution: DNS
----
 

@@ -6,7 +6,7 @@ data:
       proxyMetadata: {}
       tracing:
         zipkin:
-          address: jaeger-collector-zipkin.skupper.svc:9411
+          address: jaeger-collector.skupper.svc:9411
         sampling: 100
       tracingServiceName: APP_LABEL_AND_NAMESPACE
     enableTracing: true
@@ -23,11 +23,10 @@ data:
     rootNamespace: istio-system
     trustDomain: cluster.local
     global:
-      meshID: "rhsi1"
+      meshId: "rhsi1"
       proxy:
         excludedIPRanges:
-        - 172.31.0.1/32
-        - 172.30.0.1/32
+        - 10.32.0.1/32
         - 127.0.0.0/8
   meshNetworks: 'networks: {}'
 kind: ConfigMap
